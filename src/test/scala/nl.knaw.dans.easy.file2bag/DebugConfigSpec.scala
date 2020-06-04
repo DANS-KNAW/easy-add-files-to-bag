@@ -17,14 +17,15 @@ package nl.knaw.dans.easy.file2bag
 
 import better.files.File
 import org.apache.commons.configuration.PropertiesConfiguration
-import org.scalatest.{ FlatSpec, Matchers }
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.collection.JavaConverters._
 
-class DebugConfigSpec extends FlatSpec with Matchers {
+class DebugConfigSpec extends AnyFlatSpec with Matchers {
 
-  val configDir = File("src/main/assembly/dist/cfg")
-  val debugConfigDir = File("src/test/resources/debug-config")
+  val configDir: File = File("src/main/assembly/dist/cfg")
+  val debugConfigDir: File = File("src/test/resources/debug-config")
 
   "debug-config" should "contain the same files as src/main/assembly/dist/cfg" in {
     val filesInDebugConfig = debugConfigDir.list.toSet
