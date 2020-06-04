@@ -32,7 +32,7 @@
 
     <name>EASY Add Files To Bag</name>
     <url>https://github.com/DANS-KNAW/easy-add-files-to-bag</url>
-    <description>add files to an existing bag</description>
+    <description>add files to existing bags</description>
     <inceptionYear>2020</inceptionYear>
 
     <properties>

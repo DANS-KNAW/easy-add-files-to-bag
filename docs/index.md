@@ -8,14 +8,13 @@ easy-add-files-to-bag
 SYNOPSIS
 --------
 
-    easy-add-files-to-bag (synopsis of command line parameters)
-    easy-add-files-to-bag (... possibly multiple lines for subcommands)
+    easy-add-files-to-bag -b <bags-dir> -f <files-dir> -m <metadata-csv-file> -d <dataset-csv-file>
 
 
 DESCRIPTION
 -----------
 
-add files to an existing bag
+add files to existing bags
 
 
 ARGUMENTS
@@ -23,6 +22,12 @@ ARGUMENTS
 
     Options:
 
+       -b, --bags  <arg>       Directory containing existing bags
+       -d, --datasets  <arg>   Existing CSV file mapping fedora-IDs to UUID-s
+       -f, --files  <arg>      Directory containing files specified in the path column of the metadata CSV
+       -m, --metadata  <arg>   Existing CSV file specifying the files and metadata to add to the bags
+       -h, --help              Show help message
+       -v, --version           Show version of this program
        -h, --help      Show help message
        -v, --version   Show version of this program
 
@@ -33,7 +38,32 @@ ARGUMENTS
 EXAMPLES
 --------
 
-    easy-add-files-to-bag -o value
+    easy-add-files-to-bag -d vaultDir -f twisterDir -d fedor2vault.csv -m metadata.csv
+
+CSV files
+---------
+
+### datasets.csv
+
+| column name | column description |
+|-------------|--------------------|
+| fedoraID    | easy-dataset-id, may be listed in `metadata` CSV file |
+| UUID        | file name, must exist in `bags` directory |
+
+Subsequent columns are ignored.
+An example is the `log-file` produced by [easy-fedoara2vault](https://github.com/DANS-KNAW/easy-fedora2vault#resulting-files).
+Additional columns are ignored.
+
+### metadata.csv
+
+| column name | column description |
+|-------------|--------------------|
+| path | Original path on Twister |
+| keep | Should the file be archived? YES/NO |
+| group-nr | Optional. Groups files not in Fedora. |
+| accessibleToRights | Optional. Default from the dataset |
+| fedora-id | dataset the file belongs to |
+| metadata in fedora | er is geen directe dataset in fedora beschikbaar. dit fedora-id geeft de metadata, maar deze fedora-id mag NIET in het <identifier> veld opgenomen worden, maar in een `<relation>` |
 
 INSTALLATION AND CONFIGURATION
 ------------------------------

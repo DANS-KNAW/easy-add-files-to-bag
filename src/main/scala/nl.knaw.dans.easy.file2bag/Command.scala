@@ -28,5 +28,10 @@ object Command extends App with DebugEnhancedLogging {
     verify()
   }
   val app = new EasyAddFilesToBagApp(configuration)
-
+  app.addFiles(
+      commandLine.bags(),
+      commandLine.files(),
+      commandLine.metadata(),
+      commandLine.datasets()
+    )
 }

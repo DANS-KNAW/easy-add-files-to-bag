@@ -15,18 +15,18 @@
  */
 package nl.knaw.dans.easy.file2bag
 
-import org.rogach.scallop.ScallopConf
+import better.files.File
+import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
 
 class CommandLineOptions(args: Array[String], configuration: Configuration) extends ScallopConf(args) {
   appendDefaultToDescription = true
   editBuilder(_.setHelpWidth(110))
   printedName = "easy-add-files-to-bag"
   version(configuration.version)
-  val description: String = s"""add files to an existing bag"""
+  val description: String = s"""add files to existing bags"""
   val synopsis: String =
     s"""
-       |  $printedName (synopsis of command line parameters)
-       |  $printedName (... possibly multiple lines for subcommands)""".stripMargin
+       |  $printedName -b <bags-dir> -f <files-dir> -m <metadata-csv-file> -d <dataset-csv-file>""".stripMargin
 
   version(s"$printedName v${ configuration.version }")
   banner(
@@ -39,7 +39,33 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
        |
        |Options:
        |""".stripMargin)
-  //val url = opt[String]("someOption", noshort = true, descr = "Description of the option", default = app.someProperty)
+
+  private implicit val fileConverter: ValueConverter[File] = singleArgConverter[File](s =>
+    File(s.replaceAll("^~", System.getProperty("user.home")))
+  )
+
+  val bags: ScallopOption[File] = opt[File](
+    "bags", noshort = false, required = true,
+    descr = "Directory containing existing bags"
+  )
+  val files: ScallopOption[File] = opt[File](
+    "files", noshort = false, required = true,
+    descr = "Directory containing files specified in the path column of the metadata CSV"
+  )
+  val metadata: ScallopOption[File] = opt[File](
+    "metadata", noshort = false, required = true,
+    descr = "Existing CSV file specifying the files and metadata to add to the bags"
+  )
+  val datasets: ScallopOption[File] = opt[File](
+    "datasets", noshort = false, required = true,
+    descr = "Existing CSV file mapping fedora-IDs to UUID-s"
+  )
+  Seq(bags, files).foreach(fileOption =>
+    validateFileIsDirectory(fileOption.map(_.toJava))
+  )
+  Seq(metadata, datasets).foreach(fileOption =>
+    validateFileIsDirectory(fileOption.map(_.toJava))
+  )
 
   footer("")
 }

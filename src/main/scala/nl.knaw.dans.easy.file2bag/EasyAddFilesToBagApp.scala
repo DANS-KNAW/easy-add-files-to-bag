@@ -15,10 +15,13 @@
  */
 package nl.knaw.dans.easy.file2bag
 
-import scala.util.{ Success, Try }
+import better.files.File
+import nl.knaw.dans.easy.file2bag.Command.FeedBackMessage
 
 class EasyAddFilesToBagApp(configuration: Configuration)  {
 
-
+  def addFiles(bags: File, files: File, metadata: File, datasets: File): FeedBackMessage = {
+    ???
+  }
 
 }
