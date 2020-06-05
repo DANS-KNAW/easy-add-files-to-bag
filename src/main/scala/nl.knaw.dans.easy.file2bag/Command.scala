@@ -16,9 +16,12 @@
 package nl.knaw.dans.easy.file2bag
 
 import better.files.File
+import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.reflectiveCalls
+import scala.util.Try
+import scala.util.control.NonFatal
 
 object Command extends App with DebugEnhancedLogging {
   type FeedBackMessage = String
@@ -28,10 +31,21 @@ object Command extends App with DebugEnhancedLogging {
     verify()
   }
   val app = new EasyAddFilesToBagApp(configuration)
-  app.addFiles(
-      commandLine.bags(),
-      commandLine.files(),
-      commandLine.metadata(),
-      commandLine.datasets()
-    )
+
+  runSubcommand(app)
+    .doIfSuccess(msg => println(s"OK: $msg"))
+    .doIfFailure { case e => logger.error(e.getMessage, e) }
+    .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
+
+  private def runSubcommand(app: EasyAddFilesToBagApp): Try[FeedBackMessage] = {
+    LogRecord.disposablePrinter(commandLine.logFilePath()).apply { printer =>
+      app.addFiles(
+        commandLine.bags(),
+        commandLine.files(),
+        commandLine.metadata(),
+        commandLine.datasets(),
+        printer,
+      )
+    }
+  }
 }

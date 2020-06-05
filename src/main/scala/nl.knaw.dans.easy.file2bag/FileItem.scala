@@ -15,23 +15,31 @@
  */
 package nl.knaw.dans.easy.file2bag
 
+import better.files.File
+
 import scala.util.Try
 import scala.xml.{ Elem, Node }
 
-case class FileItem(xml: Node)
+class FileItem(xml: Node)
 
 object FileItem {
 
-  def filesXml(items: Seq[FileItem]): Elem =
+  def filesXml(newItem: Node, items: Elem): Elem =
     <files xmlns:dcterms="http://purl.org/dc/terms/"
            xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ https://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"
     >
-    { items.map(_.xml) }
+    { items }
     </files>
 
-  def apply(fedoraFileId: String, foXml: Node): Try[FileItem] = Try {
+  /**
+   * @param oldXml     the old metadata/dataset.xml of the bag
+   * @param rights     from CVS input
+   * @param datasetXml default if nothing in input
+   * @return
+   */
+  def apply(oldXml: Elem, rights: String, datasetXml: File): Try[Node] = Try {
 
     def get(tag: String) = {
       ???
@@ -47,5 +55,6 @@ object FileItem {
         <visibleToRights>{ visibleTo }</visibleToRights>
       </file>
     )
+    oldXml // TODO inject new item
   }
 }

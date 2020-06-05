@@ -15,53 +15,61 @@
  */
 package nl.knaw.dans.easy.file2bag
 
-import java.io.InputStream
 import java.nio.charset.Charset.defaultCharset
 import java.nio.file.Paths
 import java.util.UUID
 
-import better.files.File
+import better.files.{ File, StringExtensions }
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.file2bag.Command.FeedBackMessage
-import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVRecord }
+import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVPrinter, CSVRecord }
 import resource.managed
 
 import scala.collection.JavaConverters._
-import scala.util.{ Success, Try }
+import scala.util.Try
 import scala.xml.XML
 
 class EasyAddFilesToBagApp(configuration: Configuration) {
-  def addFiles(bags: File, files: File, metadataCSV: File, datasetsCSV: File): Try[FeedBackMessage] = {
 
-    def metadata2newPayload(datasets: Map[String, UUID])
-                         (record: CSVRecord): Try[Unit] = {
-      val bagDir = bags / datasets(record.get(4)).toString
+  def addFiles(bags: File,
+               files: File,
+               metadataCSV: File,
+               datasetsCSV: File,
+               printer: CSVPrinter,
+              ): Try[FeedBackMessage] = {
+
+    def addPayloadWithRights(input: MetadataRecord): LogRecord = {
+      val bagDir = bags / input.bagId.toString
+      val payloadSource = files / input.path.toString
       val filesXmlPath = Paths.get("metadata/files.xml")
-      record.get(1).toUpperCase() match {
-        case "YES" =>
-          val rights = record.get(3)
-          val payloadPath = record.get(0)
-          for {
-            bag <- DansV0Bag.read(bagDir)
-            _ <- bag.addPayloadFile(files / payloadPath, Paths.get(payloadPath))
-            filesXml <- Try(XML.loadFile((bagDir / "metadata/files.xml").toString()))
-            newFilesXml: InputStream = ??? // FileItem(???, ???) // TODO add to filesXML
-            _ <- bag.removeTagFile(filesXmlPath)
-         //   _ <- bag.addTagFile(newFilesXml, filesXmlPath)
-            _ <- bag.save
-          } yield ()
-        case _ => Success(())
-      }
+      val ddmFile = bagDir / "metadata/dataset.xml"
+      val triedString = for {
+        bag <- DansV0Bag.read(bagDir)
+        filesXml <- Try(XML.loadFile((bagDir / filesXmlPath.toString).toString()))
+        _ <- bag.addPayloadFile(payloadSource, input.path)
+        newFilesXml <- FileItem(filesXml, input.rights, ddmFile)
+        _ <- bag.removeTagFile(filesXmlPath)
+        _ <- bag.addTagFile(newFilesXml.serialize.inputStream, filesXmlPath)
+        _ <- bag.save
+      } yield s"saved with rights[] in $bagDir/data/${ input.path }"
+      val comment = triedString.toEither.fold(s"FAILED: " + _, identity)
+      LogRecord(input.path, input.rights, input.fedoraId, comment)
+    }
+
+    def execute(datasets: Map[String, UUID], printer: CSVPrinter)
+               (inputCsvRecord: CSVRecord): Try[Unit] = {
+      MetadataRecord(datasets, inputCsvRecord)
+        .fold(identity, addPayloadWithRights)
+        .print(printer)
     }
 
     for {
-      datasetMap <- parse(datasetsCSV, fedoraId2uuid).map(_.toMap)
-      results <- parse(metadataCSV, metadata2newPayload(datasetMap))
-    } yield ???
-    ???
+      datasets <- parse(datasetsCSV, fedoraToUuid)
+      rows <- parse(metadataCSV, execute(datasets.toMap, printer))
+    } yield s"${ rows.size } records written to CSV log file"
   }
 
-  private def fedoraId2uuid(record: CSVRecord): (String, UUID) = {
+  private def fedoraToUuid(record: CSVRecord): (String, UUID) = {
     record.get(0) -> UUID.fromString(record.get(1))
   }
 
