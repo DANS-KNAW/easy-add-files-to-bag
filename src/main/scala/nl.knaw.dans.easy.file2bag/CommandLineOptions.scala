@@ -15,8 +15,12 @@
  */
 package nl.knaw.dans.easy.file2bag
 
+import java.nio.file.{ Path, Paths }
+
 import better.files.File
 import org.rogach.scallop.{ ScallopConf, ScallopOption, ValueConverter, singleArgConverter }
+
+import scala.xml.Properties
 
 class CommandLineOptions(args: Array[String], configuration: Configuration) extends ScallopConf(args) {
   appendDefaultToDescription = true
@@ -45,21 +49,27 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   )
 
   val bags: ScallopOption[File] = opt[File](
-    "bags", noshort = false, required = true,
+    name = "bags", short = 'b', required = true,
     descr = "Directory containing existing bags"
   )
   val files: ScallopOption[File] = opt[File](
-    "files", noshort = false, required = true,
+    name = "files", short = 'f', required = true,
     descr = "Directory containing files specified in the path column of the metadata CSV"
   )
   val metadata: ScallopOption[File] = opt[File](
-    "metadata", noshort = false, required = true,
+    name = "metadata", short = 'm', required = true,
     descr = "Existing CSV file specifying the files and metadata to add to the bags"
   )
   val datasets: ScallopOption[File] = opt[File](
-    "datasets", noshort = false, required = true,
+    name = "datasets", short = 'd', required = true,
     descr = "Existing CSV file mapping fedora-IDs to UUID-s"
   )
+  val logFilePath: ScallopOption[Path] = opt(
+    name = "log-file", short = 'l', required = false,
+    descr = s"The name of the logfile in csv format. If not provided a file $printedName-<timestamp>.csv will be created in the home-dir of the user.",
+    default = Some(Paths.get(Properties.userHome).resolve(s"$printedName-$now.csv"))
+  )
+
   Seq(bags, files).foreach(fileOption =>
     validateFileIsDirectory(fileOption.map(_.toJava))
   )

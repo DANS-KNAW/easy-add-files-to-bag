@@ -18,10 +18,14 @@ package nl.knaw.dans.easy.file2bag
 import java.io.ByteArrayOutputStream
 
 import better.files.File
+import nl.knaw.dans.easy.file2bag.fixture.{ CustomMatchers, FixedCurrentDateTimeSupport }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class ReadmeSpec extends AnyFlatSpec with Matchers with CustomMatchers {
+class ReadmeSpec extends AnyFlatSpec
+  with Matchers
+  with CustomMatchers
+  with FixedCurrentDateTimeSupport {
 
   private val configuration = Configuration(
     version = "my-version",

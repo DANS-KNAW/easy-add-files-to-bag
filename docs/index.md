@@ -25,15 +25,12 @@ ARGUMENTS
        -b, --bags  <arg>       Directory containing existing bags
        -d, --datasets  <arg>   Existing CSV file mapping fedora-IDs to UUID-s
        -f, --files  <arg>      Directory containing files specified in the path column of the metadata CSV
+       -l, --log-file  <arg>   The name of the logfile in csv format. If not provided a file
+                               easy-add-files-to-bag-<timestamp>.csv will be created in the home-dir of the user.
+                               (default = /Users/jokep/easy-add-files-to-bag-2020-02-02T20:20:02.000Z.csv)
        -m, --metadata  <arg>   Existing CSV file specifying the files and metadata to add to the bags
        -h, --help              Show help message
        -v, --version           Show version of this program
-       -h, --help      Show help message
-       -v, --version   Show version of this program
-
-    Subcommand: run-service - Starts EASY Add Files To Bag as a daemon that services HTTP requests
-       -h, --help   Show help message
-    ---
 
 EXAMPLES
 --------
@@ -43,27 +40,38 @@ EXAMPLES
 CSV files
 ---------
 
+The first line of both CSV files are assumed to be headers and ignored.
+
 ### datasets.csv
 
 | column name | column description |
 |-------------|--------------------|
 | fedoraID    | easy-dataset-id, may be listed in `metadata` CSV file |
-| UUID        | file name, must exist in `bags` directory |
+| UUID        | file name. If the fedoraId is mentioned in `metadata` CSV file, the UUID must exist in the `bags` directory. |
 
-Subsequent columns are ignored.
-An example is the `log-file` produced by [easy-fedoara2vault](https://github.com/DANS-KNAW/easy-fedora2vault#resulting-files).
 Additional columns are ignored.
+An example is the `log-file` produced by [easy-fedoara2vault](https://github.com/DANS-KNAW/easy-fedora2vault#resulting-files).
 
 ### metadata.csv
 
+| column name        | column description |
+|--------------------|--------------------|
+| path               | Original path on Twister |
+| keep               | Lines without the value `YES` are ignored. |
+| groupNr            | Ignored |
+| accessibleToRights | Optional. Default from the dataset |
+| fedoraId           | dataset the file belongs to. Lines without a value are ignored. |
+
+Additional columns are ignored.
+
+### log-file.csv
+
 | column name | column description |
 |-------------|--------------------|
-| path | Original path on Twister |
-| keep | Should the file be archived? YES/NO |
-| group-nr | Optional. Groups files not in Fedora. |
-| accessibleToRights | Optional. Default from the dataset |
-| fedora-id | dataset the file belongs to |
-| metadata in fedora | er is geen directe dataset in fedora beschikbaar. dit fedora-id geeft de metadata, maar deze fedora-id mag NIET in het <identifier> veld opgenomen worden, maar in een `<relation>` |
+| path        | copied from metadata.csv |
+| rights      | idem |
+| fedoraID    | idem |
+| comment     | error message or a message containing the item added to `metadata/files.xml` and the location of the added file |
 
 INSTALLATION AND CONFIGURATION
 ------------------------------
