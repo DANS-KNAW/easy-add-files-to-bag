@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.file2bag
 
 import java.nio.charset.Charset.defaultCharset
-import java.nio.file.Paths
+import java.nio.file.{ Path, Paths }
 import java.util.UUID
 
 import better.files.{ File, StringExtensions }
@@ -35,7 +35,7 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
                files: File,
                metadataCSV: File,
                datasetsCSV: File,
-               printer: CSVPrinter,
+               csvLogFile: Path,
               ): Try[FeedBackMessage] = {
 
     def addPayloadWithRights(input: MetadataRecord): LogRecord = {
@@ -63,10 +63,12 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
         .print(printer)
     }
 
-    for {
-      datasets <- parse(datasetsCSV, fedoraToUuid)
-      rows <- parse(metadataCSV, execute(datasets.toMap, printer))
-    } yield s"${ rows.size } records written to CSV log file"
+    LogRecord.disposablePrinter(csvLogFile).apply { printer =>
+      for {
+        datasets <- parse(datasetsCSV, fedoraToUuid)
+        rows <- parse(metadataCSV, execute(datasets.toMap, printer))
+      } yield s"${ rows.size } records written to ${ csvLogFile.toAbsolutePath }"
+    }
   }
 
   private def fedoraToUuid(record: CSVRecord): (String, UUID) = {

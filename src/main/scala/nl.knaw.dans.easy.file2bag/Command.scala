@@ -38,14 +38,12 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: EasyAddFilesToBagApp): Try[FeedBackMessage] = {
-    LogRecord.disposablePrinter(commandLine.logFilePath()).apply { printer =>
-      app.addFiles(
-        commandLine.bags(),
-        commandLine.files(),
-        commandLine.metadata(),
-        commandLine.datasets(),
-        printer,
-      )
-    }
+    app.addFiles(
+      commandLine.bags(),
+      commandLine.files(),
+      commandLine.metadata(),
+      commandLine.datasets(),
+      commandLine.logFilePath(),
+    )
   }
 }
