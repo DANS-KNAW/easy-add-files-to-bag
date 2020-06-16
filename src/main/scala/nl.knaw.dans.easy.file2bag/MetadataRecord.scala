@@ -34,8 +34,8 @@ object MetadataRecord {
     ).getOrElse(LogRecord(path, rights, fedoraId, "no bag found").asLeft)
 
     skip match {
-      case "YES" => create
-      case _ => LogRecord(path,rights,fedoraId,"skipped").asLeft
+      case "YES" => LogRecord(path,rights,fedoraId,"skipped").asLeft
+      case _ => create
     }
   }
 }
