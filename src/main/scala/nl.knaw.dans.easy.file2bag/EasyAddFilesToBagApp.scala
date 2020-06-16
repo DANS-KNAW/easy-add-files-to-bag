@@ -45,9 +45,9 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
       val ddmFile = bagDir / "metadata/dataset.xml"
       val triedString = for {
         bag <- DansV0Bag.read(bagDir)
-        filesXml <- Try(XML.loadFile((bagDir / filesXmlPath.toString).toString()))
+        oldFilesXml <- Try(XML.loadFile((bagDir / filesXmlPath.toString).toString()))
         _ <- bag.addPayloadFile(payloadSource, input.path)
-        newFilesXml <- FileItem(filesXml, input.rights, ddmFile)
+        newFilesXml <- FilesXml(oldFilesXml, input.rights, input.path, ddmFile)
         _ <- bag.removeTagFile(filesXmlPath)
         _ <- bag.addTagFile(newFilesXml.serialize.inputStream, filesXmlPath)
         _ <- bag.save
