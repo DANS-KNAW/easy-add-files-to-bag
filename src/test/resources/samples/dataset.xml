@@ -1,0 +1,27 @@
+<ddm:DDM xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/" xmlns:gml="http://www.opengis.net/gml" xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+    <ddm:profile>
+        <dc:title xml:lang="nld">as</dc:title>
+        <dcterms:description xml:lang="nld">as</dcterms:description>
+        <dcx-dai:creatorDetails>
+            <dcx-dai:organization>
+                <dcx-dai:name xml:lang="nld">as</dcx-dai:name>
+            </dcx-dai:organization>
+        </dcx-dai:creatorDetails>
+        <ddm:created>2020-03-17</ddm:created>
+        <ddm:available>2020-03-17</ddm:available>
+        <ddm:audience>D13200</ddm:audience>
+        <ddm:accessRights>REQUEST_PERMISSION</ddm:accessRights>
+    </ddm:profile>
+    <ddm:dcmiMetadata>
+        <dcterms:identifier xsi:type="id-type:DOI">10.17026/test-Iiib-z9p-4ywa</dcterms:identifier>
+        <dcx-dai:contributorDetails>
+            <dcx-dai:organization>
+                <dcx-dai:name xml:lang="nld">dfj</dcx-dai:name>
+                <dcx-dai:role>RightsHolder</dcx-dai:role>
+            </dcx-dai:organization>
+        </dcx-dai:contributorDetails>
+        <dcterms:rightsHolder>dfj</dcterms:rightsHolder>
+        <dcterms:dateSubmitted xsi:type="dcterms:W3CDTF">2020-03-17</dcterms:dateSubmitted>
+        <dcterms:license xsi:type="dcterms:URI">http://dans.knaw.nl/en/about/organisation-and-policy/legal-information/DANSLicence.pdf</dcterms:license>
+    </ddm:dcmiMetadata>
+</ddm:DDM>
