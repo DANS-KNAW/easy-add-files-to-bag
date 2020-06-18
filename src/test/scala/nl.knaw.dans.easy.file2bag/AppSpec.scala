@@ -42,7 +42,7 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
 
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
-         |some.txt,OPEN_ACCESS,easy-dataset:16,saved with rights[] in $testDir/bags/$uuid/data/some.txt
+         |some.txt,OPEN_ACCESS,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
          |""".stripMargin
     bag.data.list.toSeq.map(_.name) shouldBe Seq("some.txt")
   }

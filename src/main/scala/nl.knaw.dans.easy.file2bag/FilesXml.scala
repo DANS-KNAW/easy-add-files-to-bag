@@ -17,62 +17,43 @@ package nl.knaw.dans.easy.file2bag
 
 import java.nio.file.Path
 
-import better.files.File
-
-import scala.util.{ Success, Try }
+import scala.util.Try
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
-import scala.xml.{ Elem, Node, XML }
+import scala.xml.{ Elem, Node }
 
 object FilesXml {
 
   /**
    * @param oldFilesXml the old metadata/dataset.xml of the bag
    * @param rights      from CVS input
-   * @param datasetXml  default if nothing in input
    * @return
    */
-  def apply(oldFilesXml: Elem, rights: String, path: Path, datasetXml: File): Try[Node] = {
+  def apply(oldFilesXml: Elem, rights: String, path: Path): Try[Node] = {
 
+    // TODO <dcterms:format>{ ??? }</dcterms:format>
     def newItem(accessibleTo: String) = {
-      <file filepath={ "data/" + path }>
-        <dcterms:title>{ path.getFileName }</dcterms:title>
-        <!-- <dcterms:format>{ ??? }</dcterms:format> -->
-        <accessibleToRights>{ accessibleTo }</accessibleToRights>
-        <visibleToRights>{ visibleTo(accessibleTo) }</visibleToRights>
-      </file>
+      val destination = "data/" + path
+      if (accessibleTo.isBlank)
+        <file filepath={ destination }/>
+      else
+        <file filepath={ destination }>
+          <accessibleToRights>{ accessibleTo }</accessibleToRights>
+        </file>
     }
 
-    def addItem(oldFiles: Node, accessibleTo: String): Try[Node] = Try {
-      // copied from https://github.com/DANS-KNAW/easy-ingest-flow/blob/de2c163335808e71992ee620391a056c344562c9/src/test/scala/nl.knaw.dans.easy.ingestflow/flowsteps/FlowStepEnrichMetadataSpec.scala#L80-L92
-      object insertElement extends RewriteRule {
-        override def transform(node: Node): Seq[Node] = node match {
-          case Elem(boundPrefix, "files", _, boundScope, children @ _*) =>
-            <files>
+    // rest copied from https://github.com/DANS-KNAW/easy-ingest-flow/blob/de2c163335808e71992ee620391a056c344562c9/src/test/scala/nl.knaw.dans.easy.ingestflow/flowsteps/FlowStepEnrichMetadataSpec.scala#L80-L92
+    object insertElement extends RewriteRule {
+      override def transform(node: Node): Seq[Node] = node match {
+        case Elem(boundPrefix, "files", _, boundScope, children @ _*) =>
+          <files>
             { children }
-            { newItem(accessibleTo) }
+            { newItem(rights) }
           </files>.copy(prefix = boundPrefix, scope = boundScope)
-          case other => other
-        }
-      }
-      new RuleTransformer(insertElement).transform(oldFiles).head
-    }
-
-    val tryAccessibleTo = {
-      if (!rights.isBlank) Success(rights)
-      else Try {
-        val ddm = XML.loadFile(datasetXml.toString) // may throw something
-        (ddm \ "profile" \ "accessRights").text
+        case other => other
       }
     }
-
-    for {
-      accessibleTo <- tryAccessibleTo
-      newFilesXml <- addItem(oldFilesXml, accessibleTo)
-    } yield newFilesXml
-  }
-
-  private def visibleTo(accessibleTo: String) = accessibleTo match {
-    case "NONE" => "NONE"
-    case _ => "ANONYMOUS"
+    Try {
+      new RuleTransformer(insertElement).transform(oldFilesXml).head
+    }
   }
 }

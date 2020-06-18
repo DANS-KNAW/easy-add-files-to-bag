@@ -41,17 +41,18 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
     def addPayloadWithRights(input: MetadataRecord): LogRecord = {
       val bagDir = bags / input.bagId.toString
       val payloadSource = files / input.path.toString
+      val payloadDestination = input.path // TODO data/original?
       val filesXmlPath = Paths.get("metadata/files.xml")
-      val ddmFile = bagDir / "metadata/dataset.xml"
+      val filesXmlFile = (bagDir / filesXmlPath.toString).toString()
       val triedString = for {
         bag <- DansV0Bag.read(bagDir)
-        oldFilesXml <- Try(XML.loadFile((bagDir / filesXmlPath.toString).toString()))
-        _ <- bag.addPayloadFile(payloadSource, input.path)
-        newFilesXml <- FilesXml(oldFilesXml, input.rights, input.path, ddmFile)
+        oldFilesXml <- Try(XML.loadFile(filesXmlFile))
+        _ <- bag.addPayloadFile(payloadSource, payloadDestination)
+        newFilesXml <- FilesXml(oldFilesXml, input.rights, payloadDestination)
         _ <- bag.removeTagFile(filesXmlPath)
         _ <- bag.addTagFile(newFilesXml.serialize.inputStream, filesXmlPath)
         _ <- bag.save
-      } yield s"saved with rights[] in $bagDir/data/${ input.path }"
+      } yield s"saved at $bagDir/data/$payloadDestination"
       val comment = triedString.toEither.fold(s"FAILED: " + _, identity)
       LogRecord(input.path, input.rights, input.fedoraId, comment)
     }

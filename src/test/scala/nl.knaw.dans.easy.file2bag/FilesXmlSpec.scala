@@ -17,27 +17,41 @@ package nl.knaw.dans.easy.file2bag
 
 import java.nio.file.Paths
 
-import better.files.File
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.util.{ Success, Try }
-import scala.xml.XML
+import scala.util.Success
 
 class FilesXmlSpec extends AnyFlatSpec with Matchers {
 
-  private val oldFilesXml = Try {
-    XML.loadString(File("src/test/resources/samples/files.xml").contentAsString)
-  }.getOrElse(fail("could not load test data"))
+  private val oldFilesXml =
+    <files xmlns:dcterms="http://purl.org/dc/terms/"
+           xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd">
+        <file filepath="data/path/to/file.txt">
+            <dcterms:format>text/plain</dcterms:format>
+            <accessibleToRights>NONE</accessibleToRights>
+            <visibleToRights>RESTRICTED_REQUEST</visibleToRights>
+        </file>
+        <file filepath="data/quicksort.hs">
+            <dcterms:format>text/plain</dcterms:format>
+        </file>
+    </files>
 
   "apply" should "add an item to files.xml" in {
-    val triedNode = FilesXml(oldFilesXml,
-      rights = "",
+    val triedNode = FilesXml(
+      oldFilesXml,
+      rights = "SOME", // garbage in is garbage out
       path = Paths.get("blabla.txt"),
-      datasetXml = File("src/test/resources/samples/dataset.xml")
     )
     triedNode shouldBe a[Success[_]]
-    (triedNode.get \ "file").theSeq.size shouldBe
-      1 + (oldFilesXml \ "file").theSeq.size
+    val newFileItems = triedNode.get \ "file"
+    newFileItems.theSeq.size shouldBe 1 + (oldFilesXml \ "file").theSeq.size
+    newFileItems.last.serialize shouldBe
+      """<?xml version='1.0' encoding='UTF-8'?>
+        |<file filepath="data/blabla.txt">
+        |  <accessibleToRights>SOME</accessibleToRights>
+        |</file>""".stripMargin
   }
 }
