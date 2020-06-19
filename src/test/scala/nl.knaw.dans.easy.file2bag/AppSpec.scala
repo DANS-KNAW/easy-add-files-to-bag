@@ -43,9 +43,10 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
 
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
-         |some.txt,ANONYMOUS,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
+         |some.txt,ANONYMOUS,easy-dataset:16,saved at $testDir/bags/$uuid/data/original/some.txt
          |""".stripMargin
-    bag.data.list.toSeq.map(_.name) shouldBe Seq("some.txt")
+    (bag.data/ "original" / "some.txt") should exist
+    (bag.data/ "original").children should have size(1)
     (bag / "metadata" / "files.xml").size shouldBe >(oldSize) // exact content tested with FilesXmlSpec
   }
 
@@ -102,7 +103,7 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
          |whoops.txt,,easy-dataset:17,FAILED: no bag-id found
-         |some.txt,,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
+         |some.txt,,easy-dataset:16,saved at $testDir/bags/$uuid/data/original/some.txt
          |some.txt,,easy-dataset:15,FAILED: java.nio.file.NoSuchFileException: $testDir/bags/$uuid2/bagit.txt
          |huh.txt,,easy-dataset:15,FAILED: java.io.FileNotFoundException: $testDir/twister-files/huh.txt (No such file or directory)
          |another.txt,,easy-dataset:16,SKIPPED (archive=NO)

@@ -44,7 +44,7 @@ class EasyAddFilesToBagApp(configuration: Configuration) extends DebugEnhancedLo
     def addPayloadWithRights(input: MetadataRecord): LogRecord = {
       val bagDir = bags / input.bagId.toString
       val payloadSource = files / input.path.toString
-      val payloadDestination = input.path // TODO data/original?
+      val payloadDestination = Paths.get("original").resolve(input.path)
       val filesXmlPath = Paths.get("metadata/files.xml")
       val filesXmlFile = (bagDir / filesXmlPath.toString).toString()
       val triedString = for {
