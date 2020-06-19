@@ -36,42 +36,48 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
     new EasyAddFilesToBagApp(null).addFiles(
       bag.baseDir / "..",
       ((testDir / "twister-files").createDirectories() / "some.txt").writeText("") / "..",
-      (testDir / "input.csv").writeText("p,-,s,r,id\nsome.txt,,NO,ANONYMOUS,easy-dataset:16"),
+      (testDir / "input.csv").writeText("p,-,a,r,id\nsome.txt,YES,,ANONYMOUS,easy-dataset:16"),
       (testDir / "f2v-output.csv").writeText(s"id,uuid\neasy-dataset:16,$uuid"),
       (testDir / "log.csv").path,
     ) shouldBe Success(s"1 records written to $testDir/log.csv")
 
-    bag.data.list.toSeq.map(_.name) shouldBe Seq("some.txt")
-    (bag / "metadata" / "files.xml").size shouldBe >(oldSize) // exact content tested with FilesXmlSpec
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
          |some.txt,ANONYMOUS,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
          |""".stripMargin
+    bag.data.list.toSeq.map(_.name) shouldBe Seq("some.txt")
+    (bag / "metadata" / "files.xml").size shouldBe >(oldSize) // exact content tested with FilesXmlSpec
   }
 
-  it should "not throw a NullPointerException for omitted rights" in {
+  it should "report skipped/failed input lines" in {
+    // note that rights are omitted and no NullPointerException is thrown
+    val input =
+      """path,archive,_,rights,fedoraId
+        |whoops.txt,Y,,,easy-dataset:17
+        |some.txt,Yes,,,easy-dataset:16
+        |huh.txt,YES,,,easy-dataset:15
+        |another.txt,No,,,easy-dataset:16
+        |""".stripMargin
+    val uuid2 = UUID.randomUUID()
+    val datasets =
+      s"""id,uuid,ignored
+         |easy-dataset:16,$uuid,blabla
+         |easy-dataset:15,$uuid2
+         |""".stripMargin
     new EasyAddFilesToBagApp(null).addFiles(
       createBagWithEmptyFilesXml.baseDir / "..",
       ((testDir / "twister-files").createDirectories() / "some.txt").writeText("") / "..",
-      (testDir / "input.csv").writeText("p,-,s,r,id\nsome.txt,,NO,,easy-dataset:16"),
-      (testDir / "f2v-output.csv").writeText(s"id,uuid,blabla\neasy-dataset:16,$uuid,blabla"),
+      (testDir / "input.csv").writeText(input),
+      (testDir / "f2v-output.csv").writeText(datasets),
       (testDir / "log.csv").path,
-    ) shouldBe Success(s"1 records written to $testDir/log.csv")
-  }
-
-  it should "report skipped input lines" in {
-    new EasyAddFilesToBagApp(null).addFiles(
-      createBagWithEmptyFilesXml.baseDir / "..",
-      ((testDir / "twister-files").createDirectories() / "some.txt").writeText("") / "..",
-      (testDir / "input.csv").writeText("p,-,s,r,id\nsome.txt,,Yes,,easy-dataset:16\nanother.txt,,Yes,,easy-dataset:16"),
-      (testDir / "f2v-output.csv").writeText(s"id,uuid,blabla\neasy-dataset:16,$uuid,blabla"),
-      (testDir / "log.csv").path,
-    ) shouldBe Success(s"1 records written to $testDir/log.csv")
+    ) shouldBe Success(s"4 records written to $testDir/log.csv")
 
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
-         |some.txt,,easy-dataset:16,skipped
-         |another.txt,,easy-dataset:16,saved at $testDir/bags/$uuid/data/another.txt
+         |whoops.txt,,easy-dataset:17,FAILED: no bag-id found
+         |some.txt,,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
+         |huh.txt,,easy-dataset:15,FAILED: java.nio.file.NoSuchFileException: $testDir/bags/$uuid2/bagit.txt
+         |another.txt,,easy-dataset:16,SKIPPED (archive=NO)
          |""".stripMargin
   }
 

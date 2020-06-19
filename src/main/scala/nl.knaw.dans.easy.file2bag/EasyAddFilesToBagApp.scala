@@ -79,18 +79,17 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
     record.get(0) -> UUID.fromString(record.get(1))
   }
 
-  def parse[T](file: File, extract: CSVRecord => T): Try[Seq[T]] = {
+  def parse[T](file: File, extract: CSVRecord => T): Try[Iterable[T]] = {
     managed(CSVParser.parse(file.toJava, defaultCharset(), CSVFormat.RFC4180))
       .map(parseCsv(_).map(extract))
       .tried
   }
 
-  private def parseCsv(parser: CSVParser): Seq[CSVRecord] = {
-    parser.asScala.toSeq.filter(_.asScala.nonEmpty).drop(1)
+  private def parseCsv(parser: CSVParser): Iterable[CSVRecord] = {
+    parser.asScala.filter(_.asScala.nonEmpty).drop(1)
   }
 }
 
 object EasyAddFilesToBagApp {
-
   private val tika = new Tika
 }
