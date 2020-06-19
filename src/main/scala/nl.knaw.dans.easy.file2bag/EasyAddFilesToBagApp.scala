@@ -22,7 +22,9 @@ import java.util.UUID
 import better.files.{ File, StringExtensions }
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.file2bag.Command.FeedBackMessage
+import nl.knaw.dans.easy.file2bag.EasyAddFilesToBagApp.tika
 import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVPrinter, CSVRecord }
+import org.apache.tika.Tika
 import resource.managed
 
 import scala.collection.JavaConverters._
@@ -46,9 +48,10 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
       val filesXmlFile = (bagDir / filesXmlPath.toString).toString()
       val triedString = for {
         bag <- DansV0Bag.read(bagDir)
+        format <- Try(tika.detect(payloadSource.toJava))
         oldFilesXml <- Try(XML.loadFile(filesXmlFile))
         _ <- bag.addPayloadFile(payloadSource, payloadDestination)
-        newFilesXml <- FilesXml(oldFilesXml, input.rights, payloadDestination)
+        newFilesXml <- FilesXml(oldFilesXml, input.rights, payloadDestination, format)
         _ <- bag.removeTagFile(filesXmlPath)
         _ <- bag.addTagFile(newFilesXml.serialize.inputStream, filesXmlPath)
         _ <- bag.save
@@ -85,4 +88,9 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
   private def parseCsv(parser: CSVParser): Seq[CSVRecord] = {
     parser.asScala.toSeq.filter(_.asScala.nonEmpty).drop(1)
   }
+}
+
+object EasyAddFilesToBagApp {
+
+  private val tika = new Tika
 }

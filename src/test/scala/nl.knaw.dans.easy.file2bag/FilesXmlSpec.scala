@@ -42,8 +42,9 @@ class FilesXmlSpec extends AnyFlatSpec with Matchers {
   "apply" should "add an item to files.xml" in {
     val triedNode = FilesXml(
       oldFilesXml,
-      rights = "SOME", // garbage in is garbage out
-      path = Paths.get("blabla.txt"),
+      accessRights = "SOME", // garbage in is garbage out
+      mimeType = "text/plain",
+      destinationPath = Paths.get("blabla.txt"),
     )
     triedNode shouldBe a[Success[_]]
     val newFileItems = triedNode.get \ "file"
@@ -51,6 +52,7 @@ class FilesXmlSpec extends AnyFlatSpec with Matchers {
     newFileItems.last.serialize shouldBe
       """<?xml version='1.0' encoding='UTF-8'?>
         |<file filepath="data/blabla.txt">
+        |  <dcterms:format>text/plain</dcterms:format>
         |  <accessibleToRights>SOME</accessibleToRights>
         |</file>""".stripMargin
   }

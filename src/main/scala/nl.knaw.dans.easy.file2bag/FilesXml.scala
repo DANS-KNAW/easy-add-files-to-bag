@@ -23,31 +23,23 @@ import scala.xml.{ Elem, Node }
 
 object FilesXml {
 
-  /**
-   * @param oldFilesXml the old metadata/dataset.xml of the bag
-   * @param rights      from CVS input
-   * @return
-   */
-  def apply(oldFilesXml: Elem, rights: String, path: Path): Try[Node] = {
+  def apply(oldFilesXml: Elem, accessRights: String, destinationPath: Path, mimeType: String): Try[Node] = {
 
-    // TODO <dcterms:format>{ ??? }</dcterms:format>
-    def newItem(accessibleTo: String) = {
-      val destination = "data/" + path
-      if (accessibleTo.isBlank)
-        <file filepath={ destination }/>
-      else
-        <file filepath={ destination }>
-          <accessibleToRights>{ accessibleTo }</accessibleToRights>
-        </file>
-    }
+    // easy-deposit-api does not supply rights at all
+    // so here we don't supply a default
+    // https://github.com/DANS-KNAW/easy-deposit-api/blob/eef71618e8b776fb274da123f8011510499c741a/src/main/scala/nl.knaw.dans.easy.deposit/docs/FilesXml.scala#L40-L42
+    val itemContent = if (accessRights.isBlank) Seq[Node]()
+                      else <accessibleToRights>{ accessRights }</accessibleToRights>
 
-    // rest copied from https://github.com/DANS-KNAW/easy-ingest-flow/blob/de2c163335808e71992ee620391a056c344562c9/src/test/scala/nl.knaw.dans.easy.ingestflow/flowsteps/FlowStepEnrichMetadataSpec.scala#L80-L92
     object insertElement extends RewriteRule {
       override def transform(node: Node): Seq[Node] = node match {
         case Elem(boundPrefix, "files", _, boundScope, children @ _*) =>
           <files>
             { children }
-            { newItem(rights) }
+            <file filepath={ "data/" + destinationPath }>
+              <dcterms:format>{ mimeType }</dcterms:format>
+              { itemContent }
+            </file>
           </files>.copy(prefix = boundPrefix, scope = boundScope)
         case other => other
       }

@@ -31,26 +31,55 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
 
   "addFiles" should "report saved file" in {
     val bag = createBagWithEmptyFilesXml
+    val oldSize = (bag / "metadata" / "files.xml").size
 
     new EasyAddFilesToBagApp(null).addFiles(
       bag.baseDir / "..",
       ((testDir / "twister-files").createDirectories() / "some.txt").writeText("") / "..",
-      (testDir / "input.csv").writeText("p,-,s,r,id\nsome.txt,,NO,OPEN_ACCESS,easy-dataset:16"),
+      (testDir / "input.csv").writeText("p,-,s,r,id\nsome.txt,,NO,ANONYMOUS,easy-dataset:16"),
       (testDir / "f2v-output.csv").writeText(s"id,uuid\neasy-dataset:16,$uuid"),
+      (testDir / "log.csv").path,
+    ) shouldBe Success(s"1 records written to $testDir/log.csv")
+
+    bag.data.list.toSeq.map(_.name) shouldBe Seq("some.txt")
+    (bag / "metadata" / "files.xml").size shouldBe >(oldSize) // exact content tested with FilesXmlSpec
+    (testDir / "log.csv").contentAsString shouldBe
+      s"""path,rights,fedoraId,comment
+         |some.txt,ANONYMOUS,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
+         |""".stripMargin
+  }
+
+  it should "not throw a NullPointerException for omitted rights" in {
+    new EasyAddFilesToBagApp(null).addFiles(
+      createBagWithEmptyFilesXml.baseDir / "..",
+      ((testDir / "twister-files").createDirectories() / "some.txt").writeText("") / "..",
+      (testDir / "input.csv").writeText("p,-,s,r,id\nsome.txt,,NO,,easy-dataset:16"),
+      (testDir / "f2v-output.csv").writeText(s"id,uuid,blabla\neasy-dataset:16,$uuid,blabla"),
+      (testDir / "log.csv").path,
+    ) shouldBe Success(s"1 records written to $testDir/log.csv")
+  }
+
+  it should "report skipped input lines" in {
+    new EasyAddFilesToBagApp(null).addFiles(
+      createBagWithEmptyFilesXml.baseDir / "..",
+      ((testDir / "twister-files").createDirectories() / "some.txt").writeText("") / "..",
+      (testDir / "input.csv").writeText("p,-,s,r,id\nsome.txt,,Yes,,easy-dataset:16\nanother.txt,,Yes,,easy-dataset:16"),
+      (testDir / "f2v-output.csv").writeText(s"id,uuid,blabla\neasy-dataset:16,$uuid,blabla"),
       (testDir / "log.csv").path,
     ) shouldBe Success(s"1 records written to $testDir/log.csv")
 
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
-         |some.txt,OPEN_ACCESS,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
+         |some.txt,,easy-dataset:16,skipped
+         |another.txt,,easy-dataset:16,saved at $testDir/bags/$uuid/data/another.txt
          |""".stripMargin
-    bag.data.list.toSeq.map(_.name) shouldBe Seq("some.txt")
   }
 
   private def createBagWithEmptyFilesXml = {
+    val content = """<files xmlns:dcterms="http://purl.org/dc/terms/"/>"""
     for {
       bag <- DansV0Bag.empty(testDir / "bags" / uuid.toString)
-      _ <- bag.addTagFile("<files/>".inputStream, Paths.get("metadata/files.xml"))
+      _ <- bag.addTagFile(content.inputStream, Paths.get("metadata/files.xml"))
       _ <- bag.save()
     } yield bag
   }.getOrElse(fail("could not create test bag"))
