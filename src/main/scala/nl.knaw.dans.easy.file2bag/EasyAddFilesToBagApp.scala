@@ -47,9 +47,9 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
       val filesXmlPath = Paths.get("metadata/files.xml")
       val filesXmlFile = (bagDir / filesXmlPath.toString).toString()
       val triedString = for {
-        bag <- DansV0Bag.read(bagDir)
         _ <- validate(input.rights)
         format <- Try(tika.detect(payloadSource.toJava))
+        bag <- DansV0Bag.read(bagDir)
         oldFilesXml <- Try(XML.loadFile(filesXmlFile))
         _ <- bag.addPayloadFile(payloadSource, payloadDestination)
         newFilesXml <- FilesXml(oldFilesXml, input.rights, payloadDestination, format)

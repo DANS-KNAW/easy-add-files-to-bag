@@ -29,7 +29,7 @@ import scala.util.Success
 class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
   private val uuid = UUID.randomUUID()
 
-  "addFiles" should "report saved file" in {
+  "addFiles" should "add payload to file system and files.xml" in {
     val bag = createBagWithEmptyFilesXml
     val oldSize = (bag / "metadata" / "files.xml").size
 
