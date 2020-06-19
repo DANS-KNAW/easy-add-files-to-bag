@@ -24,7 +24,7 @@ import nl.knaw.dans.easy.file2bag.fixture.FileSystemSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.util.Success
+import scala.util.{ Failure, Success }
 
 class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
   private val uuid = UUID.randomUUID()
@@ -49,14 +49,28 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
     (bag / "metadata" / "files.xml").size shouldBe >(oldSize) // exact content tested with FilesXmlSpec
   }
 
+  it should "fail on missing UUID" in {
+    new EasyAddFilesToBagApp(null).addFiles(
+      testDir / "bag",
+      testDir / "twister-files",
+      testDir / "input.csv",
+      (testDir / "f2v-output.csv").writeText(s"id,uuid\neasy-dataset:16"),
+      (testDir / "log.csv").path,
+    ) should matchPattern {
+      case Failure(e: Throwable) if e.getMessage == "too short record in datasets file: CSVRecord [comment='null', recordNumber=2, values=[easy-dataset:16]]" =>
+    }
+  }
+
   it should "report skipped/failed input lines" in {
     // note that rights are omitted and no NullPointerException is thrown
     val input =
       """path,archive,_,rights,fedoraId
         |whoops.txt,Y,,,easy-dataset:17
         |some.txt,Yes,,,easy-dataset:16
+        |some.txt,YES,,,easy-dataset:15
         |huh.txt,YES,,,easy-dataset:15
         |another.txt,No,,,easy-dataset:16
+        |null.txt,No
         |blabla.txt,YES,,SOME,easy-dataset:16
         |""".stripMargin
     val uuid2 = UUID.randomUUID()
@@ -71,14 +85,16 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
       (testDir / "input.csv").writeText(input),
       (testDir / "f2v-output.csv").writeText(datasets),
       (testDir / "log.csv").path,
-    ) shouldBe Success(s"5 records written to $testDir/log.csv")
+    ) shouldBe Success(s"7 records written to $testDir/log.csv")
 
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
          |whoops.txt,,easy-dataset:17,FAILED: no bag-id found
          |some.txt,,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
-         |huh.txt,,easy-dataset:15,FAILED: java.nio.file.NoSuchFileException: $testDir/bags/$uuid2/bagit.txt
+         |some.txt,,easy-dataset:15,FAILED: java.nio.file.NoSuchFileException: $testDir/bags/$uuid2/bagit.txt
+         |huh.txt,,easy-dataset:15,FAILED: java.io.FileNotFoundException: $testDir/twister-files/huh.txt (No such file or directory)
          |another.txt,,easy-dataset:16,SKIPPED (archive=NO)
+         |"",,,"SKIPPED: to few fields in CSVRecord [comment='null', recordNumber=7, values=[null.txt, No]]"
          |blabla.txt,SOME,easy-dataset:16,"FAILED: java.lang.Exception: SOME is not one of NONE, ANONYMOUS, KNOWN, RESTRICTED_REQUEST, RESTRICTED_GROUP, "
          |""".stripMargin
   }

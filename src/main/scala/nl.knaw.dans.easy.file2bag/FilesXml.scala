@@ -17,11 +17,13 @@ package nl.knaw.dans.easy.file2bag
 
 import java.nio.file.Path
 
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+
 import scala.util.Try
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml.{ Elem, Node }
 
-object FilesXml {
+object FilesXml extends DebugEnhancedLogging {
 
   def apply(oldFilesXml: Elem, accessRights: String, destinationPath: Path, mimeType: String): Try[Node] = {
 
@@ -30,16 +32,19 @@ object FilesXml {
     // https://github.com/DANS-KNAW/easy-deposit-api/blob/eef71618e8b776fb274da123f8011510499c741a/src/main/scala/nl.knaw.dans.easy.deposit/docs/FilesXml.scala#L40-L42
     val itemContent = if (accessRights.isBlank) Seq[Node]()
                       else <accessibleToRights>{ accessRights }</accessibleToRights>
+    val newItem =
+        <file filepath={ "data/" + destinationPath }>
+          <dcterms:format>{ mimeType }</dcterms:format>
+          { itemContent }
+        </file>
+    logger.info(newItem.toOneLiner)
 
     object insertElement extends RewriteRule {
       override def transform(node: Node): Seq[Node] = node match {
         case Elem(boundPrefix, "files", _, boundScope, children @ _*) =>
           <files>
             { children }
-            <file filepath={ "data/" + destinationPath }>
-              <dcterms:format>{ mimeType }</dcterms:format>
-              { itemContent }
-            </file>
+            { newItem }
           </files>.copy(prefix = boundPrefix, scope = boundScope)
         case other => other
       }

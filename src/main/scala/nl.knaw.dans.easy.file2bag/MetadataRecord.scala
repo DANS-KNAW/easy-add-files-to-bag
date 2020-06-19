@@ -24,18 +24,22 @@ case class MetadataRecord(fedoraId: String, bagId: UUID, path: Path, rights: Str
 
 object MetadataRecord {
   def apply(datasets: Map[String, UUID], input: CSVRecord): Either[LogRecord,MetadataRecord] = {
-    val path = Paths.get(input.get(0))
-    val archive = input.get(1).toUpperCase()
-    val rights = input.get(3)
-    val fedoraId = input.get(4)
+    if (input.size() < 5)
+      LogRecord(Paths.get(""), "", "", s"SKIPPED: to few fields in $input").asLeft
+    else {
+      val path = Paths.get(input.get(0))
+      val archive = input.get(1).toUpperCase()
+      val rights = input.get(3)
+      val fedoraId = input.get(4)
 
-    def create = datasets.get(fedoraId).map(uuid =>
-      new MetadataRecord(fedoraId, uuid, path, rights).asRight
-    ).getOrElse(LogRecord(path, rights, fedoraId, "FAILED: no bag-id found").asLeft)
+      def create = datasets.get(fedoraId).map(uuid =>
+        new MetadataRecord(fedoraId, uuid, path, rights).asRight
+      ).getOrElse(LogRecord(path, rights, fedoraId, "FAILED: no bag-id found").asLeft)
 
-    archive match {
-      case "YES" | "Y" => create
-      case _ => LogRecord(path,rights,fedoraId,s"SKIPPED (archive=$archive)").asLeft
+      archive match {
+        case "YES" | "Y" => create
+        case _ => LogRecord(path,rights,fedoraId,s"SKIPPED (archive=$archive)").asLeft
+      }
     }
   }
 }

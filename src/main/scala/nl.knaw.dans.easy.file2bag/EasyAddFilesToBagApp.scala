@@ -23,6 +23,7 @@ import better.files.{ File, StringExtensions }
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.file2bag.Command.FeedBackMessage
 import nl.knaw.dans.easy.file2bag.EasyAddFilesToBagApp._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVPrinter, CSVRecord }
 import org.apache.tika.Tika
 import resource.managed
@@ -31,7 +32,7 @@ import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success, Try }
 import scala.xml.XML
 
-class EasyAddFilesToBagApp(configuration: Configuration) {
+class EasyAddFilesToBagApp(configuration: Configuration) extends DebugEnhancedLogging {
 
   def addFiles(bags: File,
                files: File,
@@ -49,6 +50,7 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
       val triedString = for {
         _ <- validate(input.rights)
         format <- Try(tika.detect(payloadSource.toJava))
+        _ = logger.info(input.toString)
         bag <- DansV0Bag.read(bagDir)
         oldFilesXml <- Try(XML.loadFile(filesXmlFile))
         _ <- bag.addPayloadFile(payloadSource, payloadDestination)
@@ -63,6 +65,7 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
 
     def execute(datasets: Map[String, UUID], printer: CSVPrinter)
                (inputCsvRecord: CSVRecord): Try[Unit] = {
+      logger.info(inputCsvRecord.toString)
       MetadataRecord(datasets, inputCsvRecord)
         .fold(identity, addPayloadWithRights)
         .print(printer)
@@ -90,6 +93,7 @@ object EasyAddFilesToBagApp {
   }
 
   private def fedoraToUuid(record: CSVRecord): (String, UUID) = {
+    if (record.size()<2) throw new IllegalArgumentException(s"too short record in datasets file: $record")
     record.get(0) -> UUID.fromString(record.get(1))
   }
 
