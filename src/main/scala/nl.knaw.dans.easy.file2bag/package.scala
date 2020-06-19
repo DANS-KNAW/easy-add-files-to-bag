@@ -15,8 +15,8 @@
  */
 package nl.knaw.dans.easy
 
-import org.joda.time.{ DateTime, DateTimeZone }
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
+import org.joda.time.{ DateTime, DateTimeZone }
 
 import scala.xml.{ Node, PrettyPrinter, Utility }
 
@@ -25,6 +25,7 @@ package object file2bag {
   val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
 
   def now: String = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
+
   private val logPrinter = new PrettyPrinter(-1, 0)
   val printer = new PrettyPrinter(160, 2)
 

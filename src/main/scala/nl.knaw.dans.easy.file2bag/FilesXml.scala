@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.file2bag
 import java.nio.file.Path
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.string._ // required by maven for isBlank, ignored by Intellij when using java-11
 
 import scala.util.Try
 import scala.xml.transform.{ RewriteRule, RuleTransformer }

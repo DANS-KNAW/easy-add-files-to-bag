@@ -20,10 +20,11 @@ import java.util.UUID
 
 import cats.syntax.either._
 import org.apache.commons.csv.CSVRecord
+
 case class MetadataRecord(fedoraId: String, bagId: UUID, path: Path, rights: String)
 
 object MetadataRecord {
-  def apply(datasets: Map[String, UUID], input: CSVRecord): Either[LogRecord,MetadataRecord] = {
+  def apply(datasets: Map[String, UUID], input: CSVRecord): Either[LogRecord, MetadataRecord] = {
     if (input.size() < 5)
       LogRecord(Paths.get(""), "", "", s"SKIPPED: to few fields in $input").asLeft
     else {
@@ -38,7 +39,7 @@ object MetadataRecord {
 
       archive match {
         case "YES" | "Y" => create
-        case _ => LogRecord(path,rights,fedoraId,s"SKIPPED (archive=$archive)").asLeft
+        case _ => LogRecord(path, rights, fedoraId, s"SKIPPED (archive=$archive)").asLeft
       }
     }
   }

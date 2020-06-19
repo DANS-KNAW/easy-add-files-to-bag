@@ -29,7 +29,6 @@ case class LogRecord(path: Path, rights: String, fedoraId: String, comment: Stri
   }
 }
 
-
 object LogRecord {
   private val csvFormat: CSVFormat = CSVFormat.RFC4180
     .withHeader("path", "rights", "fedoraId", "comment")
