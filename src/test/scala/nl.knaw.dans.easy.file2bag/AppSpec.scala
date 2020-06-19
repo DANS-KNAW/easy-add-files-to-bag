@@ -74,7 +74,6 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
   }
 
   it should "report skipped/failed input lines" in {
-    // note that rights are omitted and no NullPointerException is thrown
     val input =
       """path,archive,_,rights,fedoraId
         |whoops.txt,Y,,,easy-dataset:17
@@ -82,6 +81,7 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
         |some.txt,YES,,,easy-dataset:15
         |huh.txt,YES,,,easy-dataset:15
         |another.txt,No,,,easy-dataset:16
+        |none.txt,No,,,
         |null.txt,No
         |blabla.txt,YES,,SOME,easy-dataset:16
         |""".stripMargin
@@ -97,7 +97,7 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
       (testDir / "input.csv").writeText(input),
       (testDir / "f2v-output.csv").writeText(datasets),
       (testDir / "log.csv").path,
-    ) shouldBe Success(s"7 records written to $testDir/log.csv")
+    ) shouldBe Success(s"8 records written to $testDir/log.csv")
 
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
@@ -106,7 +106,8 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
          |some.txt,,easy-dataset:15,FAILED: java.nio.file.NoSuchFileException: $testDir/bags/$uuid2/bagit.txt
          |huh.txt,,easy-dataset:15,FAILED: java.io.FileNotFoundException: $testDir/twister-files/huh.txt (No such file or directory)
          |another.txt,,easy-dataset:16,SKIPPED (archive=NO)
-         |"",,,"SKIPPED: to few fields in CSVRecord [comment='null', recordNumber=7, values=[null.txt, No]]"
+         |none.txt,,,SKIPPED no fedora-id
+         |"",,,"SKIPPED: to few fields in CSVRecord [comment='null', recordNumber=8, values=[null.txt, No]]"
          |blabla.txt,SOME,easy-dataset:16,"FAILED: java.lang.Exception: SOME is not one of NONE, ANONYMOUS, KNOWN, RESTRICTED_REQUEST, RESTRICTED_GROUP, "
          |""".stripMargin
   }

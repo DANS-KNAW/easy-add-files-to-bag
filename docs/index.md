@@ -40,8 +40,6 @@ EXAMPLES
 CSV files
 ---------
 
-The first line of both CSV files are assumed to be headers and ignored.
-
 ### datasets.csv
 
 | column name | column description |
@@ -49,7 +47,7 @@ The first line of both CSV files are assumed to be headers and ignored.
 | fedoraID    | easy-dataset-id, may be listed in `metadata` CSV file |
 | UUID        | file name. If the fedoraId is mentioned in `metadata` CSV file, the UUID must exist in the `bags` directory. |
 
-Additional columns are ignored.
+Additional columns are ignored. The first line is ignored, assuming ot is a header.
 An example is the `log-file` produced by [easy-fedoara2vault](https://github.com/DANS-KNAW/easy-fedora2vault#resulting-files).
 
 ### metadata.csv
@@ -62,7 +60,7 @@ An example is the `log-file` produced by [easy-fedoara2vault](https://github.com
 | accessibleToRights | Optional. Default from the dataset |
 | fedoraId           | dataset the file belongs to. Lines without a value are ignored. |
 
-Additional columns are ignored.
+Additional columns are ignored. The first line is ignored, assuming ot is a header.
 
 ### log-file.csv
 

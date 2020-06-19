@@ -27,20 +27,23 @@ object MetadataRecord {
   def apply(datasets: Map[String, UUID], input: CSVRecord): Either[LogRecord, MetadataRecord] = {
     if (input.size() < 5)
       LogRecord(Paths.get(""), "", "", s"SKIPPED: to few fields in $input").asLeft
-    else {
-      val path = Paths.get(input.get(0))
-      val archive = input.get(1).toUpperCase()
-      val rights = input.get(3)
-      val fedoraId = input.get(4)
+    else if (input.getRecordNumber == 0)
+           LogRecord(Paths.get(""), "", "", s"SKIPPED: assumed header $input").asLeft
+         else {
+           val path = Paths.get(input.get(0))
+           val archive = input.get(1).toUpperCase()
+           val rights = input.get(3)
+           val fedoraId = input.get(4)
 
-      def create = datasets.get(fedoraId).map(uuid =>
-        new MetadataRecord(fedoraId, uuid, path, rights).asRight
-      ).getOrElse(LogRecord(path, rights, fedoraId, "FAILED: no bag-id found").asLeft)
+           def create = datasets.get(fedoraId).map(uuid =>
+             new MetadataRecord(fedoraId, uuid, path, rights).asRight
+           ).getOrElse(LogRecord(path, rights, fedoraId, "FAILED: no bag-id found").asLeft)
 
-      archive match {
-        case "YES" | "Y" => create
-        case _ => LogRecord(path, rights, fedoraId, s"SKIPPED (archive=$archive)").asLeft
-      }
-    }
+           (archive, fedoraId) match {
+             case (_, "") => LogRecord(path, rights, fedoraId, s"SKIPPED no fedora-id").asLeft
+             case ("YES", _) | ("Y", _) => create
+             case _ => LogRecord(path, rights, fedoraId, s"SKIPPED (archive=$archive)").asLeft
+           }
+         }
   }
 }
