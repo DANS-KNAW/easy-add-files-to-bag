@@ -36,7 +36,7 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
     new EasyAddFilesToBagApp(null).addFiles(
       bag.baseDir / "..",
       ((testDir / "twister-files").createDirectories() / "some.txt").writeText("") / "..",
-      (testDir / "input.csv").writeText("p,-,a,r,id\nsome.txt,YES,,ANONYMOUS,easy-dataset:16"),
+      (testDir / "input.csv").writeText("p,a,_,r,id\nsome.txt,YES,,ANONYMOUS,easy-dataset:16"),
       (testDir / "f2v-output.csv").writeText(s"id,uuid\neasy-dataset:16,$uuid"),
       (testDir / "log.csv").path,
     ) shouldBe Success(s"1 records written to $testDir/log.csv")
@@ -57,6 +57,7 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
         |some.txt,Yes,,,easy-dataset:16
         |huh.txt,YES,,,easy-dataset:15
         |another.txt,No,,,easy-dataset:16
+        |blabla.txt,YES,,SOME,easy-dataset:16
         |""".stripMargin
     val uuid2 = UUID.randomUUID()
     val datasets =
@@ -70,7 +71,7 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
       (testDir / "input.csv").writeText(input),
       (testDir / "f2v-output.csv").writeText(datasets),
       (testDir / "log.csv").path,
-    ) shouldBe Success(s"4 records written to $testDir/log.csv")
+    ) shouldBe Success(s"5 records written to $testDir/log.csv")
 
     (testDir / "log.csv").contentAsString shouldBe
       s"""path,rights,fedoraId,comment
@@ -78,6 +79,7 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
          |some.txt,,easy-dataset:16,saved at $testDir/bags/$uuid/data/some.txt
          |huh.txt,,easy-dataset:15,FAILED: java.nio.file.NoSuchFileException: $testDir/bags/$uuid2/bagit.txt
          |another.txt,,easy-dataset:16,SKIPPED (archive=NO)
+         |blabla.txt,SOME,easy-dataset:16,"FAILED: java.lang.Exception: SOME is not one of NONE, ANONYMOUS, KNOWN, RESTRICTED_REQUEST, RESTRICTED_GROUP, "
          |""".stripMargin
   }
 

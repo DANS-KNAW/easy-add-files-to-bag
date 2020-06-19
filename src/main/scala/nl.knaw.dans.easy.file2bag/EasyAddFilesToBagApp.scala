@@ -22,13 +22,13 @@ import java.util.UUID
 import better.files.{ File, StringExtensions }
 import nl.knaw.dans.bag.v0.DansV0Bag
 import nl.knaw.dans.easy.file2bag.Command.FeedBackMessage
-import nl.knaw.dans.easy.file2bag.EasyAddFilesToBagApp.tika
+import nl.knaw.dans.easy.file2bag.EasyAddFilesToBagApp._
 import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVPrinter, CSVRecord }
 import org.apache.tika.Tika
 import resource.managed
 
 import scala.collection.JavaConverters._
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
 import scala.xml.XML
 
 class EasyAddFilesToBagApp(configuration: Configuration) {
@@ -48,6 +48,7 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
       val filesXmlFile = (bagDir / filesXmlPath.toString).toString()
       val triedString = for {
         bag <- DansV0Bag.read(bagDir)
+        _ <- validate(input.rights)
         format <- Try(tika.detect(payloadSource.toJava))
         oldFilesXml <- Try(XML.loadFile(filesXmlFile))
         _ <- bag.addPayloadFile(payloadSource, payloadDestination)
@@ -74,6 +75,19 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
       } yield s"${ rows.size } records written to ${ csvLogFile.toAbsolutePath }"
     }
   }
+}
+
+object EasyAddFilesToBagApp {
+  private val tika = new Tika
+
+  //https://github.com/DANS-KNAW/easy-schema/blob/5879174909ae68c07a6ac683ffb5435f17894a94/lib/src/main/resources/bag/metadata/files/2017/09/files.xsd#L110-L133
+  private val allowed = Seq("NONE", "ANONYMOUS", "KNOWN", "RESTRICTED_REQUEST", "RESTRICTED_GROUP", "")
+
+  private def validate(rights: String): Try[Unit] = {
+    allowed.find(_ == rights)
+      .map(_ => Success(()))
+      .getOrElse(Failure(new Exception(s"$rights is not one of ${ allowed.mkString(", ") }")))
+  }
 
   private def fedoraToUuid(record: CSVRecord): (String, UUID) = {
     record.get(0) -> UUID.fromString(record.get(1))
@@ -88,8 +102,4 @@ class EasyAddFilesToBagApp(configuration: Configuration) {
   private def parseCsv(parser: CSVParser): Iterable[CSVRecord] = {
     parser.asScala.filter(_.asScala.nonEmpty).drop(1)
   }
-}
-
-object EasyAddFilesToBagApp {
-  private val tika = new Tika
 }
