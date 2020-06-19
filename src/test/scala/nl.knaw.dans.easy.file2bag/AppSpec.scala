@@ -61,6 +61,18 @@ class AppSpec extends AnyFlatSpec with Matchers with FileSystemSupport {
     }
   }
 
+  it should "fail on invalid UUID" in {
+    new EasyAddFilesToBagApp(null).addFiles(
+      testDir / "bag",
+      testDir / "twister-files",
+      testDir / "input.csv",
+      (testDir / "f2v-output.csv").writeText(s"id,uuid\neasy-dataset:16,blabla"),
+      (testDir / "log.csv").path,
+    ) should matchPattern {
+      case Failure(e: Throwable) if e.getMessage == "Invalid uuid. CSVRecord [comment='null', recordNumber=2, values=[easy-dataset:16, blabla]]" =>
+    }
+  }
+
   it should "report skipped/failed input lines" in {
     // note that rights are omitted and no NullPointerException is thrown
     val input =

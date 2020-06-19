@@ -93,8 +93,11 @@ object EasyAddFilesToBagApp {
   }
 
   private def fedoraToUuid(record: CSVRecord): (String, UUID) = {
-    if (record.size()<2) throw new IllegalArgumentException(s"too short record in datasets file: $record")
-    record.get(0) -> UUID.fromString(record.get(1))
+    if (record.size() < 2)
+      throw new IllegalArgumentException(s"too short record in datasets file: $record")
+    Try(UUID.fromString(record.get(1)))
+      .map(uuid => record.get(0) -> uuid)
+      .getOrElse(throw new IllegalArgumentException(s"Invalid uuid. $record"))
   }
 
   def parse[T](file: File, extract: CSVRecord => T): Try[Iterable[T]] = {
