@@ -22,36 +22,45 @@ import nl.knaw.dans.lib.string._ // required by maven for isBlank, ignored by In
 
 import scala.util.Try
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
-import scala.xml.{ Elem, Node }
+import scala.xml.{ Elem, Node, XML, NamespaceBinding }
 
 object FilesXml extends DebugEnhancedLogging {
 
-  def apply(oldFilesXml: Elem, accessRights: String, destinationPath: Path, mimeType: String): Try[Node] = {
+  val DEFAULT_PREFIX = "dcterms"
+  val DEFAULT_URI = "http://purl.org/dc/terms/"
+
+  def apply(filesXml: Elem, accessRights: String, destinationPath: Path, mimeType: String): Try[Node] = {
 
     // easy-deposit-api does not supply rights at all
     // so here we don't supply a default
     // https://github.com/DANS-KNAW/easy-deposit-api/blob/eef71618e8b776fb274da123f8011510499c741a/src/main/scala/nl.knaw.dans.easy.deposit/docs/FilesXml.scala#L40-L42
-    val itemContent = if (accessRights.isBlank) Seq[Node]()
-                      else <accessibleToRights>{ accessRights }</accessibleToRights>
-    val newItem =
-        <file filepath={ "data/" + destinationPath }>
-          <dcterms:format>{ mimeType }</dcterms:format>
-          { itemContent }
-        </file>
-    logger.info(newItem.toOneLiner)
+
+    val formatTagPrefix = Option(filesXml.scope.getPrefix(DEFAULT_URI)).getOrElse(DEFAULT_PREFIX)
+    val filesXmlWithPossiblyAddedNamespace  = Option(filesXml.scope.getURI(formatTagPrefix))
+      .map(_ => filesXml)
+      .getOrElse(filesXml.copy(scope = NamespaceBinding(formatTagPrefix, DEFAULT_URI, filesXml.scope)))
+    val accessibleTo = if (accessRights.isBlank) ""
+                       else s"<accessibleToRights>$accessRights</accessibleToRights>"
+    val newFileElement =
+      XML.loadString(
+        s"""<file filepath="data/$destinationPath">
+           <$formatTagPrefix:format>$mimeType</$formatTagPrefix:format>
+           $accessibleTo
+        </file>""")
+    logger.info(newFileElement.toOneLiner)
 
     object insertElement extends RewriteRule {
       override def transform(node: Node): Seq[Node] = node match {
         case Elem(boundPrefix, "files", _, boundScope, children @ _*) =>
           <files>
             { children }
-            { newItem }
+            { newFileElement }
           </files>.copy(prefix = boundPrefix, scope = boundScope)
         case other => other
       }
     }
     Try {
-      new RuleTransformer(insertElement).transform(oldFilesXml).head
+      new RuleTransformer(insertElement).transform(filesXmlWithPossiblyAddedNamespace).head
     }
   }
 }
